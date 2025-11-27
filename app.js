@@ -3,18 +3,33 @@
  * Mobile-friendly web application for analyzing cat moods using camera
  */
 
-// Cat mood categories (matching the PyTorch model)
-const MOOD_CLASSES = ['angry', 'curious', 'hungry', 'playful', 'relaxed', 'sad', 'sick'];
+/**
+ * Cat mood data - combines mood classes with their associated emojis.
+ * IMPORTANT: The order of moods must match the PyTorch model's class indices
+ * for proper integration when using a real trained model.
+ * Order matches: train_dataset.classes from the CatMoodelGC.ipynb notebook
+ */
+const MOOD_DATA = {
+    'angry': { emoji: '😾', index: 0 },
+    'curious': { emoji: '🙀', index: 1 },
+    'hungry': { emoji: '😿', index: 2 },
+    'playful': { emoji: '😸', index: 3 },
+    'relaxed': { emoji: '😺', index: 4 },
+    'sad': { emoji: '😢', index: 5 },
+    'sick': { emoji: '🤒', index: 6 }
+};
 
-// Emoji mappings for each mood
-const MOOD_EMOJIS = {
-    'angry': '😾',
-    'curious': '🙀',
-    'hungry': '😿',
-    'playful': '😸',
-    'relaxed': '😺',
-    'sad': '😢',
-    'sick': '🤒'
+// Derived arrays for compatibility
+const MOOD_CLASSES = Object.keys(MOOD_DATA);
+const MOOD_EMOJIS = Object.fromEntries(
+    Object.entries(MOOD_DATA).map(([mood, data]) => [mood, data.emoji])
+);
+
+// Simulation constants for demo mode
+const SIMULATION_CONFIG = {
+    CONFIDENCE_BOOST_MULTIPLIER: 1.5,  // Multiplier to boost top prediction confidence
+    CONFIDENCE_BOOST_OFFSET: 0.2,       // Base offset added to top prediction
+    MAX_CONFIDENCE: 0.95                // Maximum allowed confidence value
 };
 
 // DOM Elements
@@ -270,8 +285,19 @@ async function analyzeMood() {
 }
 
 /**
- * Run model inference
- * This is a simulation - in production, integrate with TensorFlow.js or ONNX.js
+ * Run model inference on the captured image
+ * 
+ * @param {string} imageData - Base64-encoded image data URL (format: 'data:image/jpeg;base64,...')
+ * @returns {Promise<Array<{mood: string, confidence: number, emoji: string}>>} 
+ *          Array of predictions sorted by confidence (descending), each containing:
+ *          - mood: The predicted mood category name
+ *          - confidence: Probability score between 0 and 1
+ *          - emoji: Visual emoji representation of the mood
+ * 
+ * NOTE: This is currently a simulation for demonstration purposes.
+ * To integrate a real model, replace simulatePredictions() with:
+ * - TensorFlow.js: Load a converted model and run tf.model.predict()
+ * - ONNX.js: Load an exported ONNX model and run inference
  */
 async function runInference(imageData) {
     // Simulate processing delay
@@ -307,7 +333,12 @@ function simulatePredictions() {
     predictions.sort((a, b) => b.confidence - a.confidence);
     
     // Boost the top prediction for more realistic results
-    predictions[0].confidence = Math.min(predictions[0].confidence * 1.5 + 0.2, 0.95);
+    // Using constants to make the simulation parameters clear and adjustable
+    const { CONFIDENCE_BOOST_MULTIPLIER, CONFIDENCE_BOOST_OFFSET, MAX_CONFIDENCE } = SIMULATION_CONFIG;
+    predictions[0].confidence = Math.min(
+        predictions[0].confidence * CONFIDENCE_BOOST_MULTIPLIER + CONFIDENCE_BOOST_OFFSET,
+        MAX_CONFIDENCE
+    );
     
     // Re-normalize
     const newSum = predictions.reduce((a, b) => a + b.confidence, 0);
