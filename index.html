@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>CatMood - Cat Emotion Analyzer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐱 CatMood</h1>
+            <p class="subtitle">Cat Emotion Analyzer</p>
+        </header>
+
+        <main>
+            <!-- Camera/Image Preview Section -->
+            <div class="preview-section">
+                <div class="preview-container">
+                    <video id="camera" autoplay playsinline></video>
+                    <canvas id="canvas" style="display: none;"></canvas>
+                    <img id="preview" alt="Cat preview" style="display: none;">
+                    <div id="placeholder" class="placeholder">
+                        <span class="placeholder-icon">📷</span>
+                        <p>Take a photo or upload an image of your cat</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="controls">
+                <button id="startCamera" class="btn btn-primary">
+                    <span class="btn-icon">📸</span>
+                    Start Camera
+                </button>
+                <button id="captureBtn" class="btn btn-capture" style="display: none;">
+                    <span class="btn-icon">⭕</span>
+                    Capture
+                </button>
+                <button id="switchCamera" class="btn btn-secondary" style="display: none;">
+                    <span class="btn-icon">🔄</span>
+                    Switch
+                </button>
+                <label class="btn btn-secondary upload-label">
+                    <span class="btn-icon">📁</span>
+                    Upload
+                    <input type="file" id="fileInput" accept="image/*" capture="environment" hidden>
+                </label>
+                <button id="analyzeBtn" class="btn btn-analyze" style="display: none;">
+                    <span class="btn-icon">🔍</span>
+                    Analyze Mood
+                </button>
+                <button id="resetBtn" class="btn btn-secondary" style="display: none;">
+                    <span class="btn-icon">↩️</span>
+                    New Photo
+                </button>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results" class="results" style="display: none;">
+                <h2>Analysis Results</h2>
+                <div class="mood-result">
+                    <div class="primary-mood">
+                        <span id="moodEmoji" class="mood-emoji">😺</span>
+                        <span id="primaryMood" class="mood-name">Analyzing...</span>
+                    </div>
+                    <div id="confidenceBar" class="confidence-bar">
+                        <div class="confidence-fill"></div>
+                    </div>
+                    <span id="confidence" class="confidence-text">0%</span>
+                </div>
+                
+                <div class="top-predictions">
+                    <h3>Top 3 Predictions</h3>
+                    <ul id="predictionsList" class="predictions-list">
+                        <!-- Predictions will be inserted here -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Analyzing your cat's mood...</p>
+            </div>
+        </main>
+
+        <footer>
+            <p>CatMood uses AI to detect cat emotions</p>
+            <p class="moods-info">Detectable moods: Playful • Angry • Sad • Sick • Curious • Relaxed • Hungry</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
