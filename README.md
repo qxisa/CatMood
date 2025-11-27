@@ -1,4 +1,6 @@
 <h1>CatMood: Cat Emotion Classifier</h1>
+https://qxisa.github.io/CatMood/
+designed only for mobile view not compatible with desktop view
 
 **Project Overview**
 
@@ -44,12 +46,6 @@ CatMood includes a mobile-friendly web UI that can be deployed using GitHub Page
 - Take photos using their device camera (front or back)
 - Upload existing cat images
 - Get mood analysis with top-3 predictions and confidence scores
-
-To use the web app:
-1. Enable GitHub Pages in your repository settings (Settings → Pages → Source: Deploy from branch → main)
-2. Access the app at `https://<username>.github.io/CatMood/`
-
-The web interface is fully responsive and works on both mobile devices and desktop browsers.
 
 **License**
 
