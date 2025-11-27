@@ -1,5 +1,5 @@
-**CatMood: Cat Emotion Classifier
-**Project Overview
+<h1>CatMood: Cat Emotion Classifier</h1>
+**Project Overview**
 
 CatMood is a machine learning project designed to classify the mood of cats based on images. The system can identify seven distinct moods: playful, angry, sad, sick, curious, relaxed, and hungry. This project demonstrates the complete ML workflow, including dataset collection, preprocessing, model training, and evaluation.
 
