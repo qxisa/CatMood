@@ -37,6 +37,20 @@ Use the test function to evaluate random images and see top-3 predictions.
 
 The model achieves accurate classification for most moods and can provide the top-3 predicted moods with probabilities for any given cat image.
 
+**Web Application**
+
+CatMood includes a mobile-friendly web UI that can be deployed using GitHub Pages. The web app allows users to:
+
+- Take photos using their device camera (front or back)
+- Upload existing cat images
+- Get mood analysis with top-3 predictions and confidence scores
+
+To use the web app:
+1. Enable GitHub Pages in your repository settings (Settings → Pages → Source: Deploy from branch → main)
+2. Access the app at `https://<username>.github.io/CatMood/`
+
+The web interface is fully responsive and works on both mobile devices and desktop browsers.
+
 **License**
 
 This project is for educational purposes. Dataset and model usage should respect any source image copyright.
