@@ -1,13 +1,13 @@
-CatMood: Cat Emotion Classifier
-Project Overview
+**CatMood: Cat Emotion Classifier
+**Project Overview
 
 CatMood is a machine learning project designed to classify the mood of cats based on images. The system can identify seven distinct moods: playful, angry, sad, sick, curious, relaxed, and hungry. This project demonstrates the complete ML workflow, including dataset collection, preprocessing, model training, and evaluation.
 
-Dataset
+**Dataset**
 
 The dataset was collected and annotated using Roboflow. Images are organized into folders by mood and preprocessed to a consistent size. Each image has a single label representing the cat's dominant mood. The dataset is split into training, validation, and test sets.
 
-Methodology
+**Methodology**
 
 Model: Pretrained ResNet18 from PyTorch's torchvision library.
 
@@ -17,7 +17,7 @@ Training: The model is trained using cross-entropy loss and Adam optimizer. Epoc
 
 Evaluation: Validation accuracy is measured per epoch, and a dedicated testing function allows for random image evaluation with top-3 predictions.
 
-Usage
+**Usage**
 
 Clone the repository.
 
@@ -32,10 +32,10 @@ Run the training notebook or script to train the model.
 
 Use the test function to evaluate random images and see top-3 predictions.
 
-Results
+**Results**
 
 The model achieves accurate classification for most moods and can provide the top-3 predicted moods with probabilities for any given cat image.
 
-License
+**License**
 
 This project is for educational purposes. Dataset and model usage should respect any source image copyright.
