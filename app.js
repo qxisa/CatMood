@@ -96,7 +96,13 @@ async function loadModel() {
     } catch (error) {
         console.error('Failed to load ONNX model:', error);
         // Provide more context about the error
-        if (error.message.includes('no such file') || error.message.includes('404') || error.message.includes('Failed to fetch')) {
+        // Network/fetch errors typically result in TypeError or contain specific messages
+        const isNetworkError = error instanceof TypeError || 
+            error.message.includes('no such file') || 
+            error.message.includes('404') || 
+            error.message.includes('Failed to fetch');
+        
+        if (isNetworkError) {
             modelLoadError = new Error('Model file not found. Please ensure catmood_model.onnx is uploaded to the repository and deployed with the website.');
         } else {
             modelLoadError = error;
