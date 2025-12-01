@@ -80,7 +80,7 @@ async function loadModel() {
     // Check if ONNX Runtime is available
     if (typeof ort === 'undefined') {
         console.warn('ONNX Runtime Web not loaded. Model inference will not be available.');
-        modelLoadError = new Error('ONNX Runtime Web library not loaded. Please check your internet connection.');
+        modelLoadError = new Error('ONNX Runtime Web library not loaded. This could be due to network issues, ad blockers, or browser security settings.');
         return;
     }
     
@@ -344,7 +344,7 @@ async function runInference(imageData) {
     }
     
     if (!onnxSession) {
-        throw new Error('Model not available. Please ensure catmood_model.onnx is present and the page is served over HTTP/HTTPS.');
+        throw new Error('Model not available. Please ensure catmood_model.onnx is present in the same directory as the web app.');
     }
     
     // Preprocess the image
