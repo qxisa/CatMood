@@ -95,7 +95,12 @@ async function loadModel() {
         console.log('Model outputs:', onnxSession.outputNames);
     } catch (error) {
         console.error('Failed to load ONNX model:', error);
-        modelLoadError = error;
+        // Provide more context about the error
+        if (error.message.includes('no such file') || error.message.includes('404') || error.message.includes('Failed to fetch')) {
+            modelLoadError = new Error('Model file not found. Please ensure catmood_model.onnx is uploaded to the repository and deployed with the website.');
+        } else {
+            modelLoadError = error;
+        }
         // Model will be loaded on-demand if initial load fails
     }
 }
@@ -311,7 +316,17 @@ async function analyzeMood() {
         displayResults(predictions);
     } catch (error) {
         console.error('Error analyzing image:', error);
-        alert('Error analyzing image. Please try again.');
+        let errorMessage = 'Unable to analyze image. ';
+        
+        if (error.message.includes('Model not available') || error.message.includes('Failed to load model')) {
+            errorMessage += 'The AI model could not be loaded. Please ensure the catmood_model.onnx file is available on the server.';
+        } else if (error.message.includes('ONNX Runtime')) {
+            errorMessage += 'The ONNX Runtime library failed to load. Please check your internet connection and try reloading the page.';
+        } else {
+            errorMessage += 'Please try again or use a different image.';
+        }
+        
+        alert(errorMessage);
         elements.analyzeBtn.style.display = 'flex';
     } finally {
         elements.loading.style.display = 'none';
@@ -344,7 +359,10 @@ async function runInference(imageData) {
     }
     
     if (!onnxSession) {
-        throw new Error('Model not available. Please ensure catmood_model.onnx is present in the same directory as the web app.');
+        const errorMsg = modelLoadError 
+            ? `Failed to load model: ${modelLoadError.message}`
+            : 'Model not available. Please ensure catmood_model.onnx is uploaded to the repository and deployed with the website.';
+        throw new Error(errorMsg);
     }
     
     // Preprocess the image
