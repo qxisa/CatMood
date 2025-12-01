@@ -77,9 +77,19 @@ The web app uses ONNX Runtime Web to run the model directly in the browser - no 
 
 **Deploying to GitHub Pages**
 
-1. Upload the `catmood_model.onnx` file to your repository (or use GitHub LFS for large files)
-2. Enable GitHub Pages in your repository settings
-3. The web application will be available at your GitHub Pages URL
+1. **Important**: Upload the `catmood_model.onnx` file to your repository root. Without this file, the web app will show "Unable to analyze image" errors.
+   - For files larger than 100MB, use GitHub LFS (Large File Storage)
+   - The model file is no longer in `.gitignore` and can be committed directly
+2. Enable GitHub Pages in your repository settings (Settings → Pages → Source: main branch)
+3. The web application will be available at your GitHub Pages URL (e.g., `https://yourusername.github.io/CatMood/`)
+
+**Troubleshooting**
+
+If you see "Unable to analyze image" or "Model not available" errors:
+- Verify that `catmood_model.onnx` exists in your repository root
+- Check the browser console (F12 → Console) for detailed error messages
+- Ensure the file was successfully deployed to GitHub Pages
+- Try clearing your browser cache and reloading the page
 
 **Results**
 
