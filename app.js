@@ -1,6 +1,6 @@
 /**
  * CatMood - Cat Emotion Analyzer
- * Mobile-friendly web application for analyzing cat moods using camera
+ * Mobile-friendly web application for analyzing cat moods using ONNX Runtime Web
  */
 
 /**
@@ -25,12 +25,18 @@ const MOOD_EMOJIS = Object.fromEntries(
     Object.entries(MOOD_DATA).map(([mood, data]) => [mood, data.emoji])
 );
 
-// Simulation constants for demo mode
-const SIMULATION_CONFIG = {
-    CONFIDENCE_BOOST_MULTIPLIER: 1.5,  // Multiplier to boost top prediction confidence
-    CONFIDENCE_BOOST_OFFSET: 0.2,       // Base offset added to top prediction
-    MAX_CONFIDENCE: 0.95                // Maximum allowed confidence value
+// ONNX Model configuration
+const MODEL_CONFIG = {
+    MODEL_PATH: 'catmood_model.onnx',
+    INPUT_SIZE: 224,
+    // ImageNet normalization values (same as used in PyTorch training)
+    MEAN: [0.485, 0.456, 0.406],
+    STD: [0.229, 0.224, 0.225]
 };
+
+// ONNX Runtime session (loaded once)
+let onnxSession = null;
+let modelLoadError = null;
 
 // DOM Elements
 const elements = {
@@ -61,9 +67,37 @@ let capturedImageData = null;
 /**
  * Initialize the application
  */
-function init() {
+async function init() {
     setupEventListeners();
     checkCameraSupport();
+    await loadModel();
+}
+
+/**
+ * Load the ONNX model
+ */
+async function loadModel() {
+    // Check if ONNX Runtime is available
+    if (typeof ort === 'undefined') {
+        console.warn('ONNX Runtime Web not loaded. Model inference will not be available.');
+        modelLoadError = new Error('ONNX Runtime Web library not loaded. Please check your internet connection.');
+        return;
+    }
+    
+    try {
+        console.log('Loading ONNX model...');
+        onnxSession = await ort.InferenceSession.create(MODEL_CONFIG.MODEL_PATH, {
+            executionProviders: ['wasm'],
+            graphOptimizationLevel: 'all'
+        });
+        console.log('Model loaded successfully');
+        console.log('Model inputs:', onnxSession.inputNames);
+        console.log('Model outputs:', onnxSession.outputNames);
+    } catch (error) {
+        console.error('Failed to load ONNX model:', error);
+        modelLoadError = error;
+        // Model will be loaded on-demand if initial load fails
+    }
 }
 
 /**
@@ -270,7 +304,7 @@ async function analyzeMood() {
     elements.analyzeBtn.style.display = 'none';
     
     try {
-        // Simulate processing time (in real implementation, this would be model inference)
+        // Run ONNX model inference
         const predictions = await runInference(capturedImageData);
         
         // Display results
@@ -285,7 +319,7 @@ async function analyzeMood() {
 }
 
 /**
- * Run model inference on the captured image
+ * Run model inference on the captured image using ONNX Runtime Web
  * 
  * @param {string} imageData - Base64-encoded image data URL (format: 'data:image/jpeg;base64,...')
  * @returns {Promise<Array<{mood: string, confidence: number, emoji: string}>>} 
@@ -293,58 +327,121 @@ async function analyzeMood() {
  *          - mood: The predicted mood category name
  *          - confidence: Probability score between 0 and 1
  *          - emoji: Visual emoji representation of the mood
- * 
- * NOTE: This is currently a simulation for demonstration purposes.
- * To integrate a real model, replace simulatePredictions() with:
- * - TensorFlow.js: Load a converted model and run tf.model.predict()
- * - ONNX.js: Load an exported ONNX model and run inference
  */
 async function runInference(imageData) {
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Check if ONNX Runtime is available
+    if (typeof ort === 'undefined') {
+        throw new Error('ONNX Runtime Web library not loaded. Please check your internet connection and reload the page.');
+    }
     
-    // Generate simulated predictions based on image analysis
-    // In production, this would use a real model like TensorFlow.js
-    const predictions = simulatePredictions();
+    // Load model if not already loaded
+    if (!onnxSession) {
+        try {
+            await loadModel();
+        } catch (error) {
+            throw new Error('Failed to load model: ' + error.message);
+        }
+    }
     
-    return predictions;
-}
-
-/**
- * Simulate model predictions
- * This creates realistic-looking predictions for demonstration
- */
-function simulatePredictions() {
-    // Generate random scores
-    let scores = MOOD_CLASSES.map(() => Math.random());
+    if (!onnxSession) {
+        throw new Error('Model not available. Please ensure catmood_model.onnx is present and the page is served over HTTP/HTTPS.');
+    }
     
-    // Normalize to sum to 1
-    const sum = scores.reduce((a, b) => a + b, 0);
-    scores = scores.map(s => s / sum);
+    // Preprocess the image
+    const inputTensor = await preprocessImage(imageData);
+    
+    // Run inference
+    const feeds = { [onnxSession.inputNames[0]]: inputTensor };
+    const results = await onnxSession.run(feeds);
+    
+    // Get output tensor
+    const outputData = results[onnxSession.outputNames[0]].data;
+    
+    // Apply softmax to get probabilities
+    const probabilities = softmax(Array.from(outputData));
     
     // Create predictions array
     const predictions = MOOD_CLASSES.map((mood, index) => ({
         mood: mood,
-        confidence: scores[index],
+        confidence: probabilities[index],
         emoji: MOOD_EMOJIS[mood]
     }));
     
     // Sort by confidence (descending)
     predictions.sort((a, b) => b.confidence - a.confidence);
     
-    // Boost the top prediction for more realistic results
-    // Using constants to make the simulation parameters clear and adjustable
-    const { CONFIDENCE_BOOST_MULTIPLIER, CONFIDENCE_BOOST_OFFSET, MAX_CONFIDENCE } = SIMULATION_CONFIG;
-    predictions[0].confidence = Math.min(
-        predictions[0].confidence * CONFIDENCE_BOOST_MULTIPLIER + CONFIDENCE_BOOST_OFFSET,
-        MAX_CONFIDENCE
-    );
-    
-    // Re-normalize
-    const newSum = predictions.reduce((a, b) => a + b.confidence, 0);
-    predictions.forEach(p => p.confidence = p.confidence / newSum);
-    
     return predictions;
+}
+
+/**
+ * Preprocess image for model inference
+ * Resizes to 224x224 and normalizes with ImageNet stats
+ * 
+ * @param {string} imageData - Base64-encoded image data URL
+ * @returns {Promise<ort.Tensor>} - ONNX tensor ready for inference
+ */
+async function preprocessImage(imageData) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            try {
+                // Create canvas for resizing
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = MODEL_CONFIG.INPUT_SIZE;
+                canvas.height = MODEL_CONFIG.INPUT_SIZE;
+                
+                // Draw and resize image
+                ctx.drawImage(img, 0, 0, MODEL_CONFIG.INPUT_SIZE, MODEL_CONFIG.INPUT_SIZE);
+                
+                // Get image data
+                const imageDataObj = ctx.getImageData(0, 0, MODEL_CONFIG.INPUT_SIZE, MODEL_CONFIG.INPUT_SIZE);
+                const pixels = imageDataObj.data;
+                
+                // Create Float32Array for model input (CHW format: channels, height, width)
+                const inputSize = MODEL_CONFIG.INPUT_SIZE;
+                const float32Data = new Float32Array(3 * inputSize * inputSize);
+                
+                // Convert from RGBA (HWC) to normalized RGB (CHW)
+                for (let y = 0; y < inputSize; y++) {
+                    for (let x = 0; x < inputSize; x++) {
+                        const pixelIdx = (y * inputSize + x) * 4;
+                        
+                        // Normalize pixel values: (pixel/255 - mean) / std
+                        const r = (pixels[pixelIdx] / 255.0 - MODEL_CONFIG.MEAN[0]) / MODEL_CONFIG.STD[0];
+                        const g = (pixels[pixelIdx + 1] / 255.0 - MODEL_CONFIG.MEAN[1]) / MODEL_CONFIG.STD[1];
+                        const b = (pixels[pixelIdx + 2] / 255.0 - MODEL_CONFIG.MEAN[2]) / MODEL_CONFIG.STD[2];
+                        
+                        // CHW format: channel * H * W + y * W + x
+                        float32Data[0 * inputSize * inputSize + y * inputSize + x] = r;
+                        float32Data[1 * inputSize * inputSize + y * inputSize + x] = g;
+                        float32Data[2 * inputSize * inputSize + y * inputSize + x] = b;
+                    }
+                }
+                
+                // Create ONNX tensor with shape [1, 3, 224, 224]
+                const tensor = new ort.Tensor('float32', float32Data, [1, 3, inputSize, inputSize]);
+                resolve(tensor);
+            } catch (error) {
+                reject(error);
+            }
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = imageData;
+    });
+}
+
+/**
+ * Apply softmax function to convert logits to probabilities
+ * 
+ * @param {number[]} logits - Raw model output values
+ * @returns {number[]} - Probability distribution summing to 1
+ */
+function softmax(logits) {
+    const maxLogit = Math.max(...logits);
+    const expValues = logits.map(x => Math.exp(x - maxLogit));
+    const sumExp = expValues.reduce((a, b) => a + b, 0);
+    return expValues.map(x => x / sumExp);
 }
 
 /**
